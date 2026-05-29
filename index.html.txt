@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBTI在线人格测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background-color: #f0f5ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+        }
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .progress {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .question {
+            display: none;
+        }
+        .question.active {
+            display: block;
+        }
+        .question h3 {
+            color: #34495e;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option {
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .option:hover {
+            border-color: #3498db;
+            background-color: #f0f8ff;
+        }
+        .option.selected {
+            border-color: #3498db;
+            background-color: #e3f2fd;
+        }
+        .result {
+            display: none;
+            text-align: center;
+        }
+        .result h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .result p {
+            color: #7f8c8d;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+        .restart-btn {
+            padding: 12px 30px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">SBTI在线人格测试</h1>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div id="questionContainer">
+            <div class="question active" data-index="0">
+                <h3>1. 你更倾向于从独处中恢复精力，还是和朋友聚会后感觉更有活力？</h3>
+                <div class="options">
+                    <div class="option" data-value="I">独处时更放松，恢复得更快</div>
+                    <div class="option" data-value="E">和朋友聚会后更有能量</div>
+                </div>
+            </div>
+            <div class="question" data-index="1">
+                <h3>2. 做决定时，你更看重事实细节，还是直觉和整体感受？</h3>
+                <div class="options">
+                    <div class="option" data-value="S">更相信眼前的事实和细节</div>
+                    <div class="option" data-value="N">更相信直觉和未来的可能性</div>
+                </div>
+            </div>
+            <div class="question" data-index="2">
+                <h3>3. 面对问题时，你更习惯用逻辑分析解决，还是先考虑他人的感受？</h3>
+                <div class="options">
+                    <div class="option" data-value="T">优先用逻辑和规则分析对错</div>
+                    <div class="option" data-value="F">优先考虑他人的感受和关系</div>
+                </div>
+            </div>
+            <div class="question" data-index="3">
+                <h3>4. 面对计划，你更喜欢提前定好细节，还是保持灵活随机应变？</h3>
+                <div class="options">
+                    <div class="option" data-value="J">提前做好计划，按步骤执行</div>
+                    <div class="option" data-value="P">保持灵活，根据情况调整</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result" id="resultContainer">
+            <h2>你的人格类型是：<span id="personalityType"></span></h2>
+            <p id="personalityDesc"></p>
+            <button class="restart-btn" onclick="restartTest()">重新测试</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        const questions = document.querySelectorAll('.question');
+        const progressBar = document.getElementById('progressBar');
+        const questionContainer = document.getElementById('questionContainer');
+        const resultContainer = document.getElementById('resultContainer');
+        const personalityTypeEl = document.getElementById('personalityType');
+        const personalityDescEl = document.getElementById('personalityDesc');
+
+        const results = {
+            'ISTJ': '严谨可靠的检查员，注重规则和责任，做事认真负责，是团队里最靠谱的执行者。',
+            'ISFJ': '温暖忠诚的守护者，关心他人感受，细心体贴，总能默默照顾好身边的人。',
+            'INFJ': '富有洞察力的倡导者，理想主义者，善于思考深层意义，追求自己认可的价值。',
+            'INTJ': '理性果断的战略家，擅长规划和分析，目标明确，总能找到最优解决方案。',
+            'ISTP': '灵活冷静的鉴赏家，动手能力强，喜欢探索事物的原理，随遇而安。',
+            'ISFP': '温和敏感的探险家，热爱生活，注重当下的体验，自带温柔的艺术气息。',
+            'INFP': '理想主义的调停者，内心丰富，追求真实，用温柔的方式坚持自己的信念。',
+            'INTP': '好奇独立的逻辑学家，热爱思考和分析，对世界充满疑问，是天生的思想家。',
+            'ESTP': '外向活跃的企业家，行动力强，适应力好，总能快速应对各种突发情况。',
+            'ESFP': '热情活泼的表演者，热爱热闹，享受当下，是大家眼里的开心果。',
+            'ENFP': '热情好奇的竞选者，充满创意和灵感，总能给身边的人带来活力。',
+            'ENTP': '聪明机智的辩论家，喜欢挑战和辩论，思维活跃，总能提出新奇的想法。',
+            'ESTJ': '务实高效的管理者，擅长组织和管理，是团队里靠谱的领导者。',
+            'ESFJ': '热情友善的执政官，乐于助人，重视和谐，总能照顾好身边的每一个人。',
+            'ENFJ': '富有魅力的教育家，善于激励他人，充满同理心，是天生的领导者。',
+            'ENTJ': '果断自信的指挥官，目标导向，擅长规划和领导，总能带领团队达成目标。'
+        };
+
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+
+                const type = this.dataset.value;
+                if (type === 'I' || type === 'E') localStorage.setItem('IE', type);
+                if (type === 'S' || type === 'N') localStorage.setItem('SN', type);
+                if (type === 'T' || type === 'F') localStorage.setItem('TF', type);
+                if (type === 'J' || type === 'P') localStorage.setItem('JP', type);
+
+                setTimeout(() => {
+                    nextQuestion();
+                }, 500);
+            });
+        });
+
+        function nextQuestion() {
+            questions[currentQuestion].classList.remove('active');
+            currentQuestion++;
+
+            progressBar.style.width = (currentQuestion / questions.length) * 100 + '%';
+
+            if (currentQuestion < questions.length) {
+                questions[currentQuestion].classList.add('active');
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            const ie = localStorage.getItem('IE') || 'I';
+            const sn = localStorage.getItem('SN') || 'S';
+            const tf = localStorage.getItem('TF') || 'T';
+            const jp = localStorage.getItem('JP') || 'J';
+            const type = ie + sn + tf + jp;
+
+            personalityTypeEl.textContent = type;
+            personalityDescEl.textContent = results[type];
+        }
+
+        function restartTest() {
+            currentQuestion = 0;
+            progressBar.style.width = '0%';
+            questionContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+            questions.forEach((q, i) => {
+                if (i === 0) q.classList.add('active');
+                else q.classList.remove('active');
+            });
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            localStorage.clear();
+        }
+    </script>
+</body>
+</html>
